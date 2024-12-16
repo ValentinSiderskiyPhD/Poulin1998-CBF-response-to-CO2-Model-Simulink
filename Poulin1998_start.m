@@ -22,12 +22,17 @@ modelName = 'Poulin1998';
 % Number of frequencies
 nFreq = length(stimHzVec);
 
+% Determine the maximum plot duration (based on the slowest frequency)
+minFreq = min(stimHzVec);
+plotDuration = 2 / minFreq; % Duration to show at least 2 cycles of the slowest frequency
+
 % Create a figure with a tiled layout
 figure;
 tiledlayout(2, nFreq, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 for i = 1:nFreq
     stimHz = stimHzVec(i);
+
     set_param(modelName, 'SimulationCommand', 'update');
     simOut = sim(modelName, ...
         'Solver', 'ode4', ...          % Choose solver (e.g., ode4 for fixed-step)
@@ -43,8 +48,8 @@ for i = 1:nFreq
     MCAF = data(:, 1);
     ETCO2 = data(:, 2);
 
-    % Extract the last segment of the data for this frequency
-    segmentStartIdx = length(time) - round(4 / stimHz / SR);
+    % Extract the last segment of the data for the uniform time duration
+    segmentStartIdx = length(time) - round(plotDuration / SR);
     segmentTime = time(segmentStartIdx:end);
     segmentMCAF = MCAF(segmentStartIdx:end);
     segmentETCO2 = ETCO2(segmentStartIdx:end);
@@ -58,7 +63,7 @@ for i = 1:nFreq
     xlabel('Time (s)');
     ylabel('MCAF');
     ylim([95, 105]); % Adjusted Y-axis limits
-    xlim([segmentTime(1), segmentTime(end)]); % Tight x-axis
+    xlim([0, plotDuration]); % Same x-axis duration for all panels
     title(sprintf('MCAF: %.4f Hz', stimHz));
     grid on;
 
@@ -67,14 +72,9 @@ for i = 1:nFreq
     plot(segmentTime, segmentETCO2, 'LineWidth', 1.5, 'Color', 'r');
     xlabel('Time (s)');
     ylabel('ETCO2');
-    xlim([segmentTime(1), segmentTime(end)]); % Tight x-axis
+    xlim([0, plotDuration]); % Same x-axis duration for all panels
     grid on;
 end
 
 % Add a common title for the figure
-sgtitle('MCAF and ETCO2 Responses at Different Frequencies\n(Poulin et al., 1998 Model)', 'FontWeight', 'bold');
-
-% Add a caption below the figure
-annotation('textbox', [0.1, 0, 0.8, 0.05], 'String', ...
-    'Data generated using the Poulin et al., 1998 model. MCAF and ETCO2 responses shown for various frequencies.', ...
-    'HorizontalAlignment', 'center', 'FontSize', 10, 'EdgeColor', 'none');
+sgtitle('MCAF and ETCO2 Responses at Different Frequencies (Poulin et al., 1998 Model)', 'FontWeight', 'bold');
